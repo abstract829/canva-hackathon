@@ -10,7 +10,7 @@ Run canva app (make sure you set the .envs)
 
 Run the backend
 
-`npm run start:backend``
+`npm run start:backend`
 
 ## Demo
 
