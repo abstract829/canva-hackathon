@@ -34,6 +34,14 @@ const lightColors = [
   "#F0FFF0", // Verde Blanco Suave
 ];
 
+const videos = [
+  "https://cdn.pixabay.com/video/2023/10/07/183960-872226574_large.mp4",
+  "https://cdn.pixabay.com/video/2020/08/14/47213-451041047_large.mp4",
+  "https://cdn.pixabay.com/video/2024/07/07/219862_large.mp4",
+  "https://cdn.pixabay.com/video/2024/06/10/216134_large.mp4",
+  "https://cdn.pixabay.com/video/2024/05/22/213026_large.mp4",
+];
+
 export const App = () => {
   const [state, setState] = useState<State>("idle");
 
@@ -41,13 +49,18 @@ export const App = () => {
   const [userName, setUserName] = useState("");
   const [profileImage, setProfileImage] = useState<string>("");
   const [youtubeUrl, setYoutubeUrl] = useState<string>("");
-  const [imageName, setImageName] = useState<string>("");
+  const [apiKey, setApiKey] = useState<string>("");
 
   const [errMessage, setErrMessage] = useState<string>("");
 
   const handleTest = async () => {
+    if (!apiKey) {
+      setErrMessage("Please enter an OpenAI API Key");
+      return;
+    }
+
     if (!youtubeUrl) {
-      setErrMessage("Please enter a youtube url");
+      setErrMessage("Please enter a Youtube URL");
       return;
     }
 
@@ -81,6 +94,7 @@ export const App = () => {
     setState("loading");
     try {
       const token = await auth.getCanvaUserToken();
+
       const res = await fetch(`${BACKEND_URL}/get-posts`, {
         method: "POST",
         headers: {
@@ -89,26 +103,23 @@ export const App = () => {
         },
         body: JSON.stringify({
           url: youtubeUrl,
+          apiKey: apiKey,
         }),
       });
 
       const body = (await res.json()) as twitterPostSchemaType;
+
+      if ((body as any).error) {
+        setErrMessage((body as any).error);
+        setState("error");
+        return;
+      }
 
       const blueMarkUrl =
         "data:image/png;base64,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";
 
       const topOfCard = 1350 / 2 - 350;
       const leftOfCard = 1080 / 2 - 350;
-
-      const video = await upload({
-        type: "VIDEO",
-        mimeType: "video/mp4",
-        url: "https://www.canva.dev/example-assets/video-import/video.mp4",
-        thumbnailImageUrl:
-          "https://www.canva.dev/example-assets/video-import/thumbnail-image.jpg",
-        thumbnailVideoUrl:
-          "https://www.canva.dev/example-assets/video-import/thumbnail-video.mp4",
-      });
 
       const blueMark = await upload({
         type: "IMAGE",
@@ -126,6 +137,8 @@ export const App = () => {
         thumbnailUrl: profileImage,
       });
 
+      let i = 0;
+
       for (const post of body.posts.slice(0, 5)) {
         await sleep(4000);
 
@@ -133,17 +146,19 @@ export const App = () => {
           name,
           userName,
           post.content,
-          video.ref,
+          i,
           profile.ref,
           blueMark.ref,
           topOfCard,
           leftOfCard
         );
+
+        i++;
       }
 
       setState("success");
     } catch (error) {
-      console.error(error);
+      console.log(error);
       setState("error");
     } finally {
       setState("idle");
@@ -154,17 +169,26 @@ export const App = () => {
     name: string,
     userName: string,
     paragraph: string,
-    videoRef: VideoRef,
+    videoIndex: number,
     profileRef: ImageRef,
     blueMark: ImageRef,
     topOfCard: number,
     leftOfCard: number
   ) => {
+    const video = await upload({
+      type: "VIDEO",
+      mimeType: "video/mp4",
+      url: videos[videoIndex],
+      thumbnailImageUrl:
+        "https://www.canva.dev/example-assets/video-import/thumbnail-image.jpg",
+      thumbnailVideoUrl: videos[videoIndex],
+    });
+
     await addPage({
       background: {
         asset: {
           type: "VIDEO",
-          ref: videoRef,
+          ref: video.ref,
         },
       },
       title: "Test",
@@ -264,6 +288,18 @@ export const App = () => {
     <div className={styles.scrollContainer}>
       <Rows spacing="3u">
         <FormField
+          label={`OpenAI Api Key ${apiKey ? "✅" : ""}`}
+          control={(props) => (
+            <TextInput
+              {...props}
+              onChange={(e) => setApiKey(e)}
+              value={apiKey}
+              placeholder="Type your OpenAI API Key"
+            />
+          )}
+        />
+
+        <FormField
           label={`Youtube URL ${youtubeUrl ? "✅" : ""}`}
           control={(props) => (
             <TextInput
@@ -330,24 +366,6 @@ export const App = () => {
         </Button>
 
         <Text>{errMessage}</Text>
-
-        {/* Error state */}
-        {state === "error" && (
-          <Rows spacing="3u">
-            <Rows spacing="1u">
-              <Title size="small">Something went wrong</Title>
-            </Rows>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setState("idle");
-              }}
-              stretch
-            >
-              Reset
-            </Button>
-          </Rows>
-        )}
       </Rows>
     </div>
   );

@@ -11,6 +11,7 @@ import {
 } from "./prompt";
 import { JsonOutputFunctionsParser } from "langchain/output_parsers";
 import { YoutubeLoader } from "@langchain/community/document_loaders/web/youtube";
+import openai from "openai";
 
 async function main() {
   // TODO: Set the CANVA_APP_ID environment variable in the project's .env file
@@ -71,29 +72,41 @@ async function main() {
 
   router.post("/get-posts", async (req, res) => {
     const url = req.body?.url;
+    const apiKey = req.body?.apiKey;
 
-    console.log({ url });
+    try {
+      const llm = new openai.OpenAI({ apiKey });
+      await llm.models.list();
+    } catch (error) {
+      return res.status(400).send({ error: "Invalid OpenAI API Key" });
+    }
 
-    const loader = YoutubeLoader.createFromUrl(url, {
-      language: "en",
-      addVideoInfo: true,
-    });
+    try {
+      const loader = YoutubeLoader.createFromUrl(url, {
+        language: "en",
+        addVideoInfo: true,
+      });
 
-    const docs = await loader.load();
+      const docs = await loader.load();
 
-    const fnCallModel = getFunctionCallingLLM(twitterPostSchema);
+      const fnCallModel = getFunctionCallingLLM(twitterPostSchema, apiKey);
 
-    const outputParser = new JsonOutputFunctionsParser();
+      const outputParser = new JsonOutputFunctionsParser();
 
-    const chain = generateTwitterPostsPrompt
-      .pipe(fnCallModel)
-      .pipe(outputParser);
+      const chain = generateTwitterPostsPrompt
+        .pipe(fnCallModel)
+        .pipe(outputParser);
 
-    const result = (await chain.invoke({
-      transcript: docs[0].pageContent,
-    })) as twitterPostSchemaType;
+      const result = (await chain.invoke({
+        transcript: docs[0].pageContent,
+      })) as twitterPostSchemaType;
 
-    res.status(200).send(result);
+      return res.status(200).send(result);
+    } catch (error: any) {
+      return res.status(400).send({
+        error: `Couldn't extract transcripts for "${url}" make sure you entered a valid Youtube URL`,
+      });
+    }
   });
 
   const server = createBaseServer(router);
