@@ -7,7 +7,7 @@
   },
   "scripts": {
     "start": "ts-node ./scripts/start/start.ts",
-    "start:backend": "ts-node ./src/backend/index.ts",
+    "start:backend": "ts-node ./utils/backend/index.ts",
     "build": "webpack --config webpack.config.js --mode production",
     "lint:types": "tsc",
     "lint": "eslint .",

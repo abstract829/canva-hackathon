@@ -14,7 +14,7 @@ import { ImageMimeType, ImageRef, upload, VideoRef } from "@canva/asset";
 import { addNativeElement } from "@canva/preview/design";
 import { getCurrentPageContext } from "@canva/design";
 import { addPage } from "@canva/design";
-import { twitterPostSchemaType } from "./backend/prompt";
+import { twitterPostSchemaType } from "utils/backend/prompt";
 
 const BACKEND_URL = `${BACKEND_HOST}`;
 
